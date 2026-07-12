@@ -1,145 +1,77 @@
-const { setWorldConstructor, setDefaultTimeout, BeforeAll, AfterAll, Before, After, Status } = require('@cucumber/cucumber');
+const { setDefaultTimeout, BeforeAll, AfterAll, Before, After, Status } = require('@cucumber/cucumber');
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { TypeformPage } = require('../pages/TypeformPage');
 
 const isHeaded = () => process.env.HEADLESS === 'false';
-const keepBrowserOpen = () => isHeaded() || process.env.KEEP_BROWSER_OPEN === 'true';
 
 let sharedBrowser = null;
 let lastOpenPage = null;
 
-class TypeformWorld {
-  constructor({ attach, log, parameters } = {}) {
-    this.attach = attach;
-    this.log = log;
-    this.parameters = parameters;
-    this.browser = null;
-    this.page = null;
-    this.testDataUrl = 'https://luckybeardsurvey.typeform.com/to/ZRbAsk1c';
-    this.scenarioName = '';
-  }
-}
+// Steps drive a real browser through animated question transitions, so they need far more than Cucumber's 5 second default.
 
-setWorldConstructor(TypeformWorld);
-
-// Steps drive a real browser through animated question transitions,
-// so they need far more than Cucumber's 5 second default.
 setDefaultTimeout(60 * 1000);
 
 BeforeAll(async function () {
-  // Ensure reports directory exists
-  const reportsDir = path.join(__dirname, '../reports');
-  if (!fs.existsSync(reportsDir)) {
-    fs.mkdirSync(reportsDir, { recursive: true });
-  }
-
+  fs.mkdirSync(path.join(__dirname, '../reports/screenshots'), { recursive: true });
   if (isHeaded()) {
-    const slowMo = parseInt(process.env.SLOW_MO || '0', 10);
     sharedBrowser = await chromium.launch({
       headless: false,
-      slowMo: Number.isNaN(slowMo) ? 0 : slowMo
+      slowMo: parseInt(process.env.SLOW_MO || '0', 10) || 0,
     });
     console.log('Headed mode: browser will stay open after the run (Ctrl+C to exit)');
   }
 });
 
 Before(async function ({ pickle }) {
-  this.scenarioName = pickle.name;
-  console.log(` Starting scenario: ${pickle.name}`);
-
-  if (isHeaded()) {
-    this.browser = sharedBrowser;
-  } else {
-    this.browser = await chromium.launch({ headless: true });
-  }
-
-  this.page = await this.browser.newPage({
-    viewport: { width: 1280, height: 720 }
-  });
-
-  // Set default navigation timeout
-
-  this.page.setDefaultTimeout(parseInt(process.env.TEST_TIMEOUT || '10000'));
-  this.page.setDefaultNavigationTimeout(parseInt(process.env.TEST_TIMEOUT || '10000'));
+  console.log(`Starting scenario: ${pickle.name}`);
+  this.browser = sharedBrowser || (await chromium.launch({ headless: true }));
+  this.page = await this.browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const timeout = parseInt(process.env.TEST_TIMEOUT || '10000', 10);
+  this.page.setDefaultTimeout(timeout);
+  this.page.setDefaultNavigationTimeout(timeout);
+  this.form = new TypeformPage(this.page);
 });
 
 After(async function (scenario) {
-  const status = scenario.result && scenario.result.status;
-  const passed = status === Status.PASSED;
-  const failed = status === Status.FAILED;
+  const failed = scenario.result && scenario.result.status === Status.FAILED;
+  const label = failed ? 'FAILED' : 'PASSED';
+  console.log(`${failed ? '❌' : '✅'} Scenario ${label.toLowerCase()}: ${scenario.pickle.name}`);
 
-  if (failed) {
-    console.log(`\n❌ Scenario failed: ${scenario.pickle.name}`);
-  } else if (passed) {
-    console.log(`✅ Scenario passed: ${scenario.pickle.name}`);
+  // Capture a screenshot for every scenario (pass and fail) and embed it in the reports.
+
+  try {
+    const safeName = scenario.pickle.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const file = path.join(__dirname, `../reports/screenshots/${safeName}_${label}_${timestamp}.png`);
+    const png = await this.page.screenshot({ path: file, fullPage: true });
+    await this.attach(png, 'image/png');
+    await this.attach(`${label} screenshot: ${path.basename(file)}`, 'text/plain');
+    console.log(`📸 Screenshot saved: ${file}`);
+  } catch (error) {
+    console.error('Failed to capture screenshot:', error);
   }
 
-  // Capture a screenshot for every scenario and embed it in the HTML/JSON reports
-
-  if (this.page) {
-    try {
-      const screenshotDir = path.join(__dirname, '../reports/screenshots');
-      if (!fs.existsSync(screenshotDir)) {
-        fs.mkdirSync(screenshotDir, { recursive: true });
-      }
-
-      const safeName = scenario.pickle.name.replace(/[^a-zA-Z0-9]/g, '_');
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const label = failed ? 'FAILED' : 'PASSED';
-      const screenshotPath = path.join(screenshotDir, `${safeName}_${label}_${timestamp}.png`);
-
-      const png = await this.page.screenshot({ path: screenshotPath, fullPage: true });
-      await this.attach(png, 'image/png');
-      await this.attach(
-        `${label} screenshot: ${path.basename(screenshotPath)}`,
-        'text/plain'
-      );
-      console.log(`📸 Screenshot saved: ${screenshotPath}`);
-    } catch (error) {
-      console.error('Failed to capture screenshot:', error);
-    }
-  }
-
-  if (keepBrowserOpen()) {
+  if (isHeaded()) {
 
     // Keep only the latest tab open for inspection; close earlier ones.
 
-    if (lastOpenPage && lastOpenPage !== this.page) {
-      try {
-        await lastOpenPage.close();
-      } catch (error) {
-        console.warn('Error closing previous page:', error);
-      }
-    }
+    if (lastOpenPage && lastOpenPage !== this.page) await lastOpenPage.close().catch(() => {});
     lastOpenPage = this.page;
-    return;
-  }
-
-  if (this.page) {
-    try {
-      await this.page.close();
-    } catch (error) {
-      console.warn('Error closing page:', error);
-    }
-  }
-
-  if (this.browser && this.browser !== sharedBrowser) {
-    try {
-      await this.browser.close();
-    } catch (error) {
-      console.warn('Error closing browser:', error);
-    }
+  } else {
+    await this.page.close().catch(() => {});
+    await this.browser.close().catch(() => {});
   }
 });
 
-AfterAll(async function () {
-  console.log('All scenarios completed');
+// AfterAll(async function () {
+//   console.log('All scenarios completed');
+//   if (isHeaded() && sharedBrowser) {
+//     console.log('Browser left open for inspection. Press Ctrl+C when you are done.');
 
-  if (keepBrowserOpen() && sharedBrowser) {
-    console.log('Browser left open for inspection. Press Ctrl+C when you are done.\n');
-    await new Promise(() => {});
-    
-    // keep process (and browser) alive
-  }
-});
+//     // Keep the  browser open.
+
+//     await new Promise(() => {});
+//   }
+// });
