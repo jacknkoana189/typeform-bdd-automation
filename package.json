@@ -1,0 +1,24 @@
+{
+  "name": "typeform-bdd-automation",
+  "version": "1.0.0",
+  "description": "BDD test automation for Lucky World Cup 2026 Typeform competition entry",
+  "scripts": {
+    "test": "cucumber-js",
+    "test:report": "cucumber-js --format html:reports/cucumber_report.html",
+    "test:debug": "cucumber-js --format progress-bar"
+  },
+  "keywords": [
+    "bdd",
+    "cucumber",
+    "playwright",
+    "typeform",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@cucumber/cucumber": "^13.0.0",
+    "@playwright/test": "^1.40.1",
+    "playwright": "^1.40.1"
+  }
+}
