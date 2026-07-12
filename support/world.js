@@ -70,13 +70,13 @@ After(async function (scenario) {
   }
 });
 
-AfterAll(async function () {
-  console.log('All scenarios completed');
-  if (isHeaded() && sharedBrowser) {
-    console.log('Browser left open for inspection. Press Ctrl+C when you are done.');
+// AfterAll(async function () {
+//   console.log('All scenarios completed');
+//   if (isHeaded() && sharedBrowser) {
+//     console.log('Browser left open for inspection. Press Ctrl+C when you are done.');
 
-    // Keep the  browser open.
+//     // Keep the  browser open.
 
-    await new Promise(() => {});
-  }
-});
+//     await new Promise(() => {});
+//   }
+// });
