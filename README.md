@@ -25,7 +25,7 @@ typeform-bdd-automation/
 ├── cucumber.js                              # Cucumber config
 ├── package.json
 ├── README.md
-└── ASSESSMENT_WRITEUP.md                    # Assessment write-up
+└── assessment_writeup.md                    # Assessment write-up
 ```
 
 
