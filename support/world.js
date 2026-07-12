@@ -14,7 +14,12 @@ let lastOpenPage = null;
 setDefaultTimeout(60 * 1000);
 
 BeforeAll(async function () {
-  fs.mkdirSync(path.join(__dirname, '../reports/screenshots'), { recursive: true });
+
+  // Start every run with a fresh screenshots folder — old screenshots are removed.
+
+  const screenshotsDir = path.join(__dirname, '../reports/screenshots');
+  fs.rmSync(screenshotsDir, { recursive: true, force: true });
+  fs.mkdirSync(screenshotsDir, { recursive: true });
   if (isHeaded()) {
     sharedBrowser = await chromium.launch({
       headless: false,
@@ -65,13 +70,13 @@ After(async function (scenario) {
   }
 });
 
-// AfterAll(async function () {
-//   console.log('All scenarios completed');
-//   if (isHeaded() && sharedBrowser) {
-//     console.log('Browser left open for inspection. Press Ctrl+C when you are done.');
+AfterAll(async function () {
+  console.log('All scenarios completed');
+  if (isHeaded() && sharedBrowser) {
+    console.log('Browser left open for inspection. Press Ctrl+C when you are done.');
 
-//     // Keep the  browser open.
+    // Keep the  browser open.
 
-//     await new Promise(() => {});
-//   }
-// });
+    await new Promise(() => {});
+  }
+});
