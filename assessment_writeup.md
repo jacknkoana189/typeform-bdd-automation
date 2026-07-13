@@ -1,6 +1,6 @@
-# QA Automat*ion Engineer Assessment — Write-Up*
+QA Automat*ion Engineer Assessment — Write-Up*
 
-## *Assumptions about the form’s expected behaviour*
+ *Assumptions about the form’s expected behaviour*
 
 *I inspected the live Typeform before locking scenarios. The form has **four questions only**:*
 
@@ -21,7 +21,7 @@
 
 
 
-## Why input-format scenarios were not applicable
+Why input-format scenarios were not applicable
 
 The brief asks for invalid-format coverage where the form collects typed values with formats (malformed email, invalid phone, out-of-range DOB).
 
@@ -38,7 +38,7 @@ So format validation was marked **N/A**, and effort went into what the form actu
 
 
 
-## What I would add or change with more time
+What I would add or change with more time
 
 1. Stronger confirmation assertions once ending-screen copy/URL is stable.
 2. Fewer residual short polls — wait only on Typeform focused-block / motion signals.
@@ -50,7 +50,7 @@ So format validation was marked **N/A**, and effort went into what the form actu
 
 
 
-## Trickiest part of automating this flow
+Trickiest part of automating this flow
 
 Typeform keeps **previous questions mounted in the DOM** and scrolls between them with animation. Naive locators match hidden/stale OK buttons and choice controls; clicks during scroll are often ignored. Short labels like `"Yes"` also match an earlier participation answer still in the DOM.
 
@@ -64,7 +64,7 @@ How I solved it:
 
 
 
-## Coverage mapping to the brief
+Coverage mapping to the brief
 
 
 | Brief requirement           | Covered? | How                                                                     |
@@ -81,6 +81,6 @@ How I solved it:
 
 
 
-## Stack choice
+Stack choice
 
 **Cucumber.js + Playwright + JavaScript** — Gherkin for readable scenarios, Playwright for reliable waits against a dynamic widget, and plain JS so reviewers can clone and run with no TypeScript build step.

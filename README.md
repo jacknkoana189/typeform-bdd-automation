@@ -1,181 +1,49 @@
-# Lucky World Cup 2026 - BDD Test Automation Suite
+Lucky World Cup 2026 - BDD Test Automation
 
-BDD automation for the Lucky Beard Survey Typeform competition entry page:
-[[https://luckybeardsurvey.typeform.com/to/ZRbAsk1c]](https://luckybeardsurvey.typeform.com/to/ZRbAsk1c])
+Automated tests for the [https://luckybeardsurvey.typeform.com/to/ZRbAsk1c](https://luckybeardsurvey.typeform.com/to/ZRbAsk1c)
 
-## Stack
-
-- **Cucumber.js** (Gherkin / BDD)
-- **Playwright** (browser automation)
-- **JavaScript** (Node.js)
-
-## Project Structure
-
-```
-typeform-bdd-automation/
-├── features/
-│   ├── lucky_world_cup_competition.feature  # Gherkin scenarios
-│   └── step_definitions/
-│       └── typeform.steps.js                # Step implementations
-├── pages/
-│   └── TypeformPage.js                      # Page Object Model
-├── support/
-│   └── world.js                             # Browser lifecycle hooks
-├── reports/                                 # HTML + JSON reports + screenshots
-├── cucumber.js                              # Cucumber config
-├── package.json
-├── README.md
-└── assessment_writeup.md                    # Assessment write-up
-```
-
-
-
-## Setup
-
-
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- Internet access (tests hit the live Typeform)
-
-
-
-### Install
+Run the tests
 
 ```bash
-cd typeform-bdd-automation
-npm install
-npx playwright install chromium
-```
-
-
-
-## Running Tests
-
-
-
-### When you want to run all the scenarios
-
-This runs **every scenario** in the feature file (all 10 stories), one after another, in a hidden browser:
-
-```bash
+npm run setup
 npm test
 ```
 
+The setup script checks your Node version, installs dependencies, and downloads
+the browser if needed. If something is missing it tells you exactly what.
+Details are in [requirements.md](requirements.md) if you ever need them.
 
-
-### Other useful commands
+To watch the browser while the tests run:
 
 ```bash
-# All scenarios + HTML / JSON reports
-npm run test:report
-
-# All scenarios, but watch the browser (PowerShell) — window stays open after the run; Ctrl+C to exit
-$env:HEADLESS="false"; npm test
-
-# All scenarios, but watch the browser (bash/macOS/Linux)
-HEADLESS=false npm test
-
-# One scenario only — pick any of these:
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Happy path"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Name field cannot be empty"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Participation question must be answered"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Draw selection must be made"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Agreement declined"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "Multi-step navigation"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "renders all questions dynamically"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "multiple draw options"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "special characters"
-npx cucumber-js features/lucky_world_cup_competition.feature --name "declining participation"
+HEADLESS=false npm test                # bash / macOS / Linux
+$env:HEADLESS="false"; npm test        # PowerShell
 ```
 
-Reports are written to:
+Every run writes an HTML report with a screenshot per scenario to
+`reports/cucumber_report.html`.
 
-- `reports/cucumber_report.html` — embedded screenshot per scenario
-- `reports/cucumber_report.json`
-- `reports/screenshots/` — PNG for every scenario (pass and fail)
+What the form is and what I tested
 
-On Windows: `start reports/cucumber_report.html`
+The form has four questions: your name, whether you want to participate, which
+draws you want to enter (Team Draw and/or Player Draw), and a consent step.
+There is no email, phone, or date of birth field, so the invalid-format checks
+from the brief were not applicable; my reasoning for that call is in
+[assessment_writeup.md](assessment_writeup.md). The suite's 10 scenarios cover
+the happy path, required-field validation for each question, consent and
+participation branching, back-navigation with an edited answer, multiple draw
+selection, and a special-character edge case on the name input.
 
-## Actual Form Structure (live inspection)
+Approach
 
-The live form has **exactly four questions**. It does **not** collect email, phone, date of birth, age/eligibility gates, region, or a World Cup prediction field.
+Built with Cucumber.js and Playwright in plain JavaScript: Gherkin for readable
+scenarios, Playwright for reliable waits, and no TypeScript build step so you
+can clone and run immediately. The tricky part of this form is that Typeform
+animates between questions and keeps answered ones mounted in the DOM, so the
+page object scopes every interaction to the focused question, waits for the
+scroll to settle before clicking, and verifies each action actually registered
+instead of trusting the click.
 
-
-| #   | Question                        | Control                            | Required              |
-| --- | ------------------------------- | ---------------------------------- | --------------------- |
-| 1   | Full name                       | Text input                         | Yes                   |
-| 2   | Would you like to participate…? | Yes / No                           | Yes                   |
-| 3   | Which draw(s)…?                 | Team Draw / Player Draw checkboxes | At least one          |
-| 4   | Agreement / consent             | Yes / No                           | Yes (flow ends if No) |
-
-
-Scenarios and page objects are written against this structure only.
-
-## Coverage (10 scenarios)
-
-
-| Area                  | What is covered                                          |
-| --------------------- | -------------------------------------------------------- |
-| Happy path            | All 4 questions with valid data → confirmation           |
-| Required fields       | Empty name; unanswered participation; no draw selected   |
-| Consent / eligibility | Decline agreement; decline participation                 |
-| Multi-step navigation | Go back, change name, finish remaining questions, submit |
-| Dynamic rendering     | Data-table driven completion through animated questions  |
-| Multiple selection    | Both Team Draw and Player Draw                           |
-| Name edge case        | Special characters in the name are accepted              |
-
-
-
-
-### Why there are no email / phone / DOB format scenarios
-
-The assessment brief asks for invalid-format checks **where applicable** (e.g. malformed email, invalid phone, out-of-range DOB).
-
-On this Typeform those fields **are not present**, so inventing email/phone/age tests would not exercise real behaviour. Instead the suite covers:
-
-- **Required-field** validation for every question that exists
-- A **name special-character** edge case (closest meaningful “input” check on this form)
-- **Consent / participation** branching (the form’s real eligibility-style logic)
-
-
-
-## Architecture
-
-- **Feature files** — business-readable Gherkin
-- **Step definitions** — reusable Given/When/Then glue
-- **Page object** (`TypeformPage`) — locators and Typeform interaction details
-
-
-
-### Locator strategy
-
-- Prefer Typeform `data-qa*` attributes and focused question blocks
-- Fall back to roles / accessible text
-- Prefer viewport-visible matches (Typeform keeps previous questions mounted in the DOM)
-
-
-
-### Wait strategy
-
-- Explicit visibility waits and scroll-settling between animated questions
-- Poll for choice selection / input values instead of fixed sleeps where practical
-
-
-
-## Test Data
-
- `Jack Mpho Nkoana`
-
-## Troubleshooting
-
-
-| Issue                             | Fix                                                             |
-| --------------------------------- | --------------------------------------------------------------- |
-| Playwright browser missing        | `npx playwright install chromium`                               |
-| Element not visible / flaky click | `$env:HEADLESS="false"; npm test` and inspect `TypeformPage.js` |
-| Typeform unreachable              | Confirm network access to the form URL                          |
-| Need evidence of a run            | Open `reports/cucumber_report.html` or `reports/screenshots/`   |
-
-
+More detail on the project structure, locator and wait strategy, and
+troubleshooting is in [project.md](project.md). Trade-offs and what I would do
+with more time are in [assessment_writeup.md](assessment_writeup.md).

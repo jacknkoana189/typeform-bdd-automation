@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "BDD test automation for Lucky World Cup 2026 Typeform competition entry",
   "scripts": {
+    "setup": "node scripts/setup.js",
     "test": "cucumber-js",
     "test:report": "cucumber-js --format html:reports/cucumber_report.html",
     "test:debug": "cucumber-js --format progress-bar"

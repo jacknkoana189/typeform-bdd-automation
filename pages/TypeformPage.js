@@ -10,7 +10,7 @@ class TypeformPage {
     this.page = page;
   }
 
-  // The question block Typeform currently has in focus.
+  // The question block Typeform currently has in focus//
 
   focused() {
     return this.page.locator('[data-qa-block="true"][data-qa-focused="true"]');
@@ -20,7 +20,7 @@ class TypeformPage {
     return this.focused().first().getAttribute('id', { timeout: 1000 }).catch(() => null);
   }
 
-  // Poll a condition until it returns true or the timeout elapses.
+  // Poll a condition until it returns true or the timeout elapses//
 
   async poll(check, timeout, interval = 200) {
     const deadline = Date.now() + timeout;
@@ -31,7 +31,7 @@ class TypeformPage {
     return false;
   }
 
-  // Wait until the focused block's position is stable — Typeform animates between questions and silently ignores clicks while moving.
+  // Wait until the focused block's position is stable — Typeform animates between questions and silently ignores clicks while moving//
 
   async settle(timeout = 6000) {
     let prevY = null;
@@ -44,7 +44,7 @@ class TypeformPage {
     }, timeout, 300);
   }
 
-  // First match whose center is actually inside the viewport — Typeform keeps every question mounted in the DOM, so selectors can hit hidden elements.
+  // First match whose center is actually inside the viewport — Typeform keeps every question mounted in the DOM, so selectors can hit hidden elements//
 
   async firstInViewport(locator, timeout = 5000) {
     const { height } = this.page.viewportSize() || { height: 720 };
@@ -66,22 +66,24 @@ class TypeformPage {
     return found;
   }
 
-  // Instant check for the ending (thank you / decline) screen.
+  // Instant check for the ending (thank you / decline) screen//
 
   async isEnded() {
     return (await this.page.locator(ENDING).count()) > 0;
   }
 
-  // Like isEnded, but waits for the submit round-trip to finish.
+  // Like isEnded, but waits for the submit round-trip to finish//
 
   async isSubmitted() {
     return this.page.locator(ENDING).first().waitFor({ state: 'visible', timeout: 8000 })
       .then(() => true).catch(() => false);
   }
 
+//Start button appearing is the real "form is ready" signal//
+
   async navigate() {
-    await this.page.goto(FORM_URL, { waitUntil: 'networkidle' });
-    await this.page.locator(START_BUTTON).first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    await this.page.goto(FORM_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await this.page.locator(START_BUTTON).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   }
 
   async clickStart() {
@@ -103,13 +105,13 @@ class TypeformPage {
     }
   }
 
-  // The name question may be scrolled away, but it stays mounted in the DOM.
+  // The name question may be scrolled away, but it stays mounted in the DOM.//
 
   async nameValue() {
     return this.page.locator(TEXT_INPUT).first().inputValue().catch(() => '');
   }
 
-  // The focused block labels itself via an "<blockId>-title" element.
+  // The focused block labels itself via an "<blockId>-title" element//
 
   async currentQuestion() {
     const title = await this.focused().locator('[id$="-title"]').first()
@@ -120,7 +122,7 @@ class TypeformPage {
   async hasError() {
     await this.settle();
 
-    // Answered questions stay mounted behind the ending screen; nothing there counts.
+    // Answered questions stay mounted behind the ending screen; nothing there counts//
 
     if (await this.isEnded()) return false;
     const errors = this.page
@@ -134,12 +136,12 @@ class TypeformPage {
     return (text || '').trim();
   }
 
-  // Advance the form: prefer Enter, then fall back to clicking the focused OK button, which also surfaces validation errors on unanswered questions.
+  //then fall back to clicking the focused OK button, which also surfaces validation errors on unanswered questions//
 
   async clickOk() {
     await this.settle();
 
-    // Leftover OK buttons after submit would navigate back.
+    // Leftover OK buttons after submit would navigate back//
 
     if (await this.isEnded()) return;
     await this.page.keyboard.press('Enter');
@@ -151,7 +153,7 @@ class TypeformPage {
       await this.settle();
     } catch {
 
-      // No OK button on the focused question; the form already advanced.
+      // No OK button on the focused question; the form already advanced//
 
     }
   }
@@ -165,7 +167,7 @@ class TypeformPage {
     }
   }
 
-  // Click a choice (radio/checkbox) by its visible label, scoped to the focused question, verified via aria-checked and retried because clicks during the scroll animation are ignored.
+  // Click a choice (radio/checkbox) by its visible label//
 
   async selectChoice(text) {
     const deadline = Date.now() + 20000;
@@ -186,7 +188,7 @@ class TypeformPage {
     }
   }
 
-  // Answer a plain Yes/No question: earlier answers stay mounted in the DOM, so scope to the focused block, press the option's shortcut letter, then verify the selection registered.
+  //earlier answers stay mounted in the DOM, so scope to the focused block, press the option's shortcut letter, then verify the selection registered//
 
   async selectYesNo(answer) {
     await this.settle();
@@ -206,7 +208,7 @@ class TypeformPage {
       const done = await this.poll(async () => {
         if (await this.isEnded()) return true;
 
-        // Focus moving to another block means the answer auto-advanced the form.
+        // Focus moving to another block means the answer auto-advanced the form//
 
         const focusedId = await this.focusedId();
         if (blockId && focusedId && focusedId !== blockId) return true;
@@ -222,7 +224,7 @@ class TypeformPage {
     throw new Error(`Choice "${answer}" was not selected on the focused question`);
   }
 
-  // The live form shows two consecutive identical agreement blocks; answering one auto-advances to the next, so keep answering until focus leaves them (or the ending shows).
+  //answering one auto-advances to the next, so keep answering until focus leaves them//
 
   async answerAgreement(answer) {
     const deadline = Date.now() + 30000;

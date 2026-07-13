@@ -1,7 +1,7 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
 const { expect } = require('@playwright/test');
 
-// this.form is a TypeformPage created for each scenario in support/world.js.
+//TypeformPage created for each scenario in support/world.js.//
 
 Given('the user navigates to the competition entry page', async function () {
   await this.form.navigate();
@@ -23,7 +23,7 @@ When('the user clears the name field and enters {string}', async function (name)
   await this.form.fillName(name);
 });
 
-// Leaving a question unanswered requires no interaction.
+// Leaving a question unanswered requires no interaction//
 
 When('the user does not enter any name', async function () {});
 When('the user does not select any participation option', async function () {});
@@ -72,7 +72,7 @@ When('the user completes the form with valid data', async function (dataTable) {
   await this.form.clickOk();
 });
 
-// Every outcome below means the same thing: the run reached Typeform's real ending screen (thank-you for entries, early ending for declines).
+//the run reached Typeform's real ending screen //
 
 for (const phrase of [
   'the user should see a success or thank you message',
