@@ -16,8 +16,31 @@ Details are in [requirements.md](requirements.md) if you ever need them.
 To watch the browser while the tests run:
 
 ```bash
+
 HEADLESS=false npm test                # bash / macOS / Linux
 $env:HEADLESS="false"; npm test        # PowerShell
+
+
+```
+
+All scenarios
+
+```bash
+
+
+# One scenario only — pick any of these:
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Happy path"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Name field cannot be empty"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Participation question must be answered"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Draw selection must be made"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Agreement declined"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "Multi-step navigation"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "renders all questions dynamically"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "multiple draw options"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "special characters"
+npx cucumber-js features/lucky_world_cup_competition.feature --name "declining participation"
+
+
 ```
 
 Every run writes an HTML report with a screenshot per scenario to
